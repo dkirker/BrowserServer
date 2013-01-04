@@ -761,10 +761,10 @@ void BrowserPage::setWindowSize(uint32_t width, uint32_t height)
     if (m_windowWidth == (int) width && m_windowHeight == (int) height)
         return;
 
-    m_windowWidth = width;
-    m_windowHeight = height;
+    m_windowWidth = width * 2;
+    m_windowHeight = height * 2;
 
-    m_webView->page()->setPreferredContentsSize(QSize(width, height));
+    m_webView->page()->setPreferredContentsSize(QSize(m_windowWidth, m_windowHeight));
 
     updateContentScrollParamsForOffscreen();
 
