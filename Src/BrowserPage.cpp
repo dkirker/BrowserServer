@@ -41,6 +41,13 @@ LICENSE@@@ */
 #include <pbnjson.hpp>
 #include <syslog.h>
 
+#include <PIpcChannel.h>
+#include <PIpcChannelListener.h>
+#define MESSAGES_INTERNAL_FILE "SysMgrMessagesInternal.h"
+#include <PIpcMessageMacros.h>
+
+#include <palmimedefines.h>
+
 #ifdef min
 // cjson defines a min macro that interferes with STL's template implementation of min
 #undef min
@@ -955,6 +962,76 @@ void BrowserPage::smartZoomCalculate( uint32_t pointX, uint32_t pointY  )
 #endif // FIXME_QT
 }
 
+static void translateEditorState(const BATypes::EditorState& state, PalmIME::EditorState& imeState)
+{
+    switch (state.type) {
+        case BATypes::FieldType_Text:
+            imeState.type = PalmIME::FieldType_Text;
+            break;
+        case BATypes::FieldType_Password:
+            imeState.type = PalmIME::FieldType_Password;
+            break;
+        case BATypes::FieldType_Search:
+            imeState.type = PalmIME::FieldType_Search;
+            break;
+        case BATypes::FieldType_Range:
+            imeState.type = PalmIME::FieldType_Range;
+            break;
+        case BATypes::FieldType_Email:
+            imeState.type = PalmIME::FieldType_Email;
+            break;
+        case BATypes::FieldType_Number:
+            imeState.type = PalmIME::FieldType_Number;
+            break;
+        case BATypes::FieldType_Phone:
+            imeState.type = PalmIME::FieldType_Phone;
+            break;
+        case BATypes::FieldType_URL:
+            imeState.type = PalmIME::FieldType_URL;
+            break;
+        case BATypes::FieldType_Color:
+            imeState.type = PalmIME::FieldType_Color;
+            break;
+        default:
+            imeState.type = PalmIME::FieldType_Text;
+            break;
+    }
+
+    switch (state.actions) {
+        case BATypes::FieldAction_None:
+            imeState.actions = PalmIME::FieldAction_None;
+            break;
+        case BATypes::FieldAction_Done:
+            imeState.actions = PalmIME::FieldAction_Done;
+            break;
+        case BATypes::FieldAction_Next:
+            imeState.actions = PalmIME::FieldAction_Next;
+            break;
+        case BATypes::FieldAction_Previous:
+            imeState.actions = PalmIME::FieldAction_Previous;
+            break;
+        case BATypes::FieldAction_Search:
+            imeState.actions = PalmIME::FieldAction_Search;
+            break;
+        default:
+            imeState.actions = PalmIME::FieldAction_None;
+            break;
+    }
+
+    switch (state.flags) {
+        case BATypes::FieldFlags_None:
+            imeState.flags = PalmIME::FieldFlags_None;
+            break;
+        case BATypes::FieldFlags_Emoticons:
+            imeState.flags = PalmIME::FieldFlags_Emoticons;
+            break;
+        default:
+            imeState.flags = PalmIME::FieldFlags_None;
+            break;
+    }
+
+    strcpy(imeState.enterKeyLabel, state.enterKeyLabel);
+}
 
 void BrowserPage::editorFocused(bool focused, const BATypes::EditorState& state)
 {
@@ -969,6 +1046,13 @@ void BrowserPage::editorFocused(bool focused, const BATypes::EditorState& state)
         int left(0), top(0), right(0), bottom(0);
         getTextCaretBounds(left, top, right, bottom);
         m_server->msgGetTextCaretBoundsResponse(m_proxy, 0, left, top, right, bottom);
+    }
+
+    if (m_channel) {
+        PalmIME::EditorState imeState;
+        translateEditorState(state, imeState);
+
+        m_channel->sendAsyncMessage(new ViewHost_EditorFocusChanged(routingId(), focused, imeState));
     }
 }
 
@@ -3360,3 +3444,40 @@ void BrowserPage::hideSelectionMarkers()
     removeInteractiveWidgetRect((uintptr_t)m_bottomMarker,InteractiveRectDefault);
 
 }
+
+void BrowserPage::onMessageReceived(const PIpcMessage& msg)
+{
+/*
+    bool msgIsOk;
+
+    IPC_BEGIN_MESSAGE_MAP(BrowserPage, msg, msgIsOk)
+        IPC_MESSAGE_HANDLER(View_Focus, focusedEvent)
+        IPC_MESSAGE_HANDLER(View_Resize, onResize)
+        IPC_MESSAGE_HANDLER(View_SyncResize, onSyncResize)
+        IPC_MESSAGE_HANDLER(View_InputEvent, onInputEvent)
+        IPC_MESSAGE_HANDLER(View_KeyEvent, onKeyEvent)
+        IPC_MESSAGE_HANDLER(View_TouchEvent, onTouchEvent)
+        IPC_MESSAGE_HANDLER(View_Close, onClose)
+        IPC_MESSAGE_HANDLER(View_DirectRenderingChanged, onDirectRenderingChanged)
+        IPC_MESSAGE_HANDLER(View_ClipboardEvent_Cut, onClipboardEvent_Cut)
+        IPC_MESSAGE_HANDLER(View_ClipboardEvent_Copy, onClipboardEvent_Copy)
+        IPC_MESSAGE_HANDLER(View_ClipboardEvent_Paste, onClipboardEvent_Paste)
+        IPC_MESSAGE_HANDLER(View_SelectAll, onSelectAll)
+        IPC_MESSAGE_HANDLER(View_Flip, onFlip)
+        IPC_MESSAGE_HANDLER(View_AsyncFlip, onAsyncFlip)
+        IPC_MESSAGE_HANDLER(View_AdjustForPositiveSpace, onAdjustForPositiveSpace)
+        IPC_MESSAGE_HANDLER(View_KeyboardShown, onKeyboardShow)
+        IPC_MESSAGE_HANDLER(View_SetComposingText, onSetComposingText)
+        IPC_MESSAGE_HANDLER(View_CommitComposingText, onCommitComposingText)
+        IPC_MESSAGE_HANDLER(View_CommitText, onCommitText)
+        IPC_MESSAGE_HANDLER(View_PerformEditorAction, onPerformEditorAction)
+        IPC_MESSAGE_HANDLER(View_RemoveInputFocus, onRemoveInputFocus)
+    IPC_END_MESSAGE_MAP()
+*/
+}
+
+void BrowserPage::onDisconnected()
+{
+    // NO OP
+}
+

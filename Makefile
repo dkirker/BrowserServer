@@ -51,7 +51,9 @@ INCLUDES := \
 	-I$(INCLUDE_DIR)/QtGui \
 	-I$(INCLUDE_DIR)/QtNetwork \
 	$(shell pkg-config --cflags glib-2.0) \
-	$(shell pkg-config --cflags luna-service2)
+	$(shell pkg-config --cflags luna-service2) \
+        $(shell pkg-config --cflags LunaSysMgrIpc)
+
 
 LIBS := \
     $(LIBAFFINITY) \
@@ -70,7 +72,8 @@ LIBS := \
 	-lQtNetwork \
 	-lWebKitMisc \
         $(shell pkg-config --libs gthread-2.0) \
-        $(shell pkg-config --libs luna-service2)
+        $(shell pkg-config --libs luna-service2) \
+	$(shell pkg-config --libs LunaSysMgrIpc)
 
 FLAGS_OPT := -fno-exceptions -fno-rtti -fvisibility=hidden -DDEBUG -fPIC -DTARGET_DEVICE
 

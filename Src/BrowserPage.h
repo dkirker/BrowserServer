@@ -48,6 +48,8 @@ LICENSE@@@ */
 #include "SSLValidationInfo.h"
 #include "BrowserAdapterTypes.h"
 
+#include <PIpcChannelListener.h>
+
 class BrowserSyncReplyPipe;
 class BrowserServer;
 class YapProxy;
@@ -67,7 +69,7 @@ enum urlOptions {
     None
 };
 
-class BrowserPage : public QGraphicsView, public QBsClient, public WebOSWebPageCreator, public WebOSWebPageNavigator
+class BrowserPage : public QGraphicsView, public QBsClient, public WebOSWebPageCreator, public WebOSWebPageNavigator, public PIpcChannelListener
 {
 Q_OBJECT
 public:
@@ -314,6 +316,10 @@ public:
     virtual void showPrintDialog();
     virtual void setCanBlitOnScroll(bool val);
     virtual void didLayout();
+
+    virtual void onMessageReceived(const PIpcMessage& msg);
+    virtual void onDisconnected();
+    inline int routingId() { return m_offscreen0->key(); } // FIXME: Is this right?
 
 public Q_SLOTS:
     void doContentsSizeChanged(const QSize&);
