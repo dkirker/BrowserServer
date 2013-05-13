@@ -120,7 +120,8 @@ APP_SOURCES := \
 	BrowserComboBox.cpp \
 	BrowserComboBox.moc.cpp \
 	qwebkitplatformplugin.moc.cpp \
-	WebOSPlatformPlugin.moc.cpp
+	WebOSPlatformPlugin.moc.cpp \
+	qwebosipcclient.cpp
 
 LIB_OBJS := $(LIB_SOURCES:%.cpp=$(OBJDIR)/%.o)
 APP_OBJS := $(APP_SOURCES:%.cpp=$(OBJDIR)/%.o)

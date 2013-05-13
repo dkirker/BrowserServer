@@ -41,6 +41,7 @@ class WebKitEventListener;
 class PluginDirWatcher;
 class QNetworkAccessManager;
 class QPersistentCookieJar;
+class QWebOSIpcClient;
 
 
 class BrowserServer : public BrowserServerBase, private BrowserComboBoxServer {
@@ -98,6 +99,7 @@ private:
     BrowserServer& operator=(const BrowserServer&);
 
     static BrowserServer* m_instance;
+    QWebOSIpcClient* m_ipcClient;
 
     QNetworkAccessManager* m_networkAccessManager;
     QPersistentCookieJar *m_cookieJar;

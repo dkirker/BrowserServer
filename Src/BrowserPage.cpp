@@ -41,10 +41,11 @@ LICENSE@@@ */
 #include <pbnjson.hpp>
 #include <syslog.h>
 
-#include <PIpcChannel.h>
-#include <PIpcChannelListener.h>
 #define MESSAGES_INTERNAL_FILE "SysMgrMessagesInternal.h"
 #include <PIpcMessageMacros.h>
+#include <PIpcChannel.h>
+
+#include "qwebosipcclient.h"
 
 #include <palmimedefines.h>
 
@@ -246,14 +247,15 @@ static QString makeUniqueFileName(const QString& inFileName)
 }
 
 #ifdef USE_LUNA_SERVICE
-BrowserPage::BrowserPage(BrowserServer* server, YapProxy* proxy, LSHandle* lsHandle)
+BrowserPage::BrowserPage(BrowserServer* server, YapProxy* proxy, LSHandle* lsHandle, QWebOSIpcClient *ipcClient)
 #else
-BrowserPage::BrowserPage(BrowserServer* server, YapProxy* proxy)
+BrowserPage::BrowserPage(BrowserServer* server, YapProxy* proxy, QWebOSIpcClient *ipcClient)
 #endif //USE_LUNA_SERVICE
     : m_lastUrlOption(None)
     , m_server(server)
     , m_proxy(proxy)
     , m_identifier(0)
+    , m_ipcClient(ipcClient)
     , m_paintTimer(0)
     , m_graphicsView(0)
     , m_scene(0)
@@ -1048,11 +1050,13 @@ void BrowserPage::editorFocused(bool focused, const BATypes::EditorState& state)
         m_server->msgGetTextCaretBoundsResponse(m_proxy, 0, left, top, right, bottom);
     }
 
-    if (m_channel) {
+    if (channel()) {
         PalmIME::EditorState imeState;
         translateEditorState(state, imeState);
 
-        m_channel->sendAsyncMessage(new ViewHost_EditorFocusChanged(routingId(), focused, imeState));
+        m_ipcClient->addPage(this);
+
+        channel()->sendAsyncMessage(new ViewHost_EditorFocusChanged(atoi(getIdentifier()), focused, imeState));
     }
 }
 
@@ -2414,9 +2418,9 @@ WebOSWebPage*
 BrowserPage::createWebOSWebPage(QWebPage::WebWindowType type)
 {
 #ifdef USE_LUNA_SERVICE
-    BrowserPage* newPage = new BrowserPage(m_server, m_server->createRecordProxy(), m_server->getServiceHandle()); 
+    BrowserPage* newPage = new BrowserPage(m_server, m_server->createRecordProxy(), m_server->getServiceHandle(), m_ipcClient); 
 #else
-    BrowserPage* newPage = new BrowserPage(m_server, m_server->createRecordProxy());
+    BrowserPage* newPage = new BrowserPage(m_server, m_server->createRecordProxy(), m_ipcClient);
 #endif //USE_LUNA_SERVICE
     if (!newPage) {
         BERR("%s: Unable to allocate BrowserPage instance", __FUNCTION__);
@@ -3445,39 +3449,7 @@ void BrowserPage::hideSelectionMarkers()
 
 }
 
-void BrowserPage::onMessageReceived(const PIpcMessage& msg)
+PIpcChannel* BrowserPage::channel() const
 {
-/*
-    bool msgIsOk;
-
-    IPC_BEGIN_MESSAGE_MAP(BrowserPage, msg, msgIsOk)
-        IPC_MESSAGE_HANDLER(View_Focus, focusedEvent)
-        IPC_MESSAGE_HANDLER(View_Resize, onResize)
-        IPC_MESSAGE_HANDLER(View_SyncResize, onSyncResize)
-        IPC_MESSAGE_HANDLER(View_InputEvent, onInputEvent)
-        IPC_MESSAGE_HANDLER(View_KeyEvent, onKeyEvent)
-        IPC_MESSAGE_HANDLER(View_TouchEvent, onTouchEvent)
-        IPC_MESSAGE_HANDLER(View_Close, onClose)
-        IPC_MESSAGE_HANDLER(View_DirectRenderingChanged, onDirectRenderingChanged)
-        IPC_MESSAGE_HANDLER(View_ClipboardEvent_Cut, onClipboardEvent_Cut)
-        IPC_MESSAGE_HANDLER(View_ClipboardEvent_Copy, onClipboardEvent_Copy)
-        IPC_MESSAGE_HANDLER(View_ClipboardEvent_Paste, onClipboardEvent_Paste)
-        IPC_MESSAGE_HANDLER(View_SelectAll, onSelectAll)
-        IPC_MESSAGE_HANDLER(View_Flip, onFlip)
-        IPC_MESSAGE_HANDLER(View_AsyncFlip, onAsyncFlip)
-        IPC_MESSAGE_HANDLER(View_AdjustForPositiveSpace, onAdjustForPositiveSpace)
-        IPC_MESSAGE_HANDLER(View_KeyboardShown, onKeyboardShow)
-        IPC_MESSAGE_HANDLER(View_SetComposingText, onSetComposingText)
-        IPC_MESSAGE_HANDLER(View_CommitComposingText, onCommitComposingText)
-        IPC_MESSAGE_HANDLER(View_CommitText, onCommitText)
-        IPC_MESSAGE_HANDLER(View_PerformEditorAction, onPerformEditorAction)
-        IPC_MESSAGE_HANDLER(View_RemoveInputFocus, onRemoveInputFocus)
-    IPC_END_MESSAGE_MAP()
-*/
+    return m_ipcClient->channel();
 }
-
-void BrowserPage::onDisconnected()
-{
-    // NO OP
-}
-

@@ -53,6 +53,8 @@ LICENSE@@@ */
 class BrowserSyncReplyPipe;
 class BrowserServer;
 class YapProxy;
+class PIpcChannel;
+class QWebOSIpcClient;
 
 /**
  * Redirects only happen once the page is loaded but commands (i.e. schema's)
@@ -69,7 +71,7 @@ enum urlOptions {
     None
 };
 
-class BrowserPage : public QGraphicsView, public QBsClient, public WebOSWebPageCreator, public WebOSWebPageNavigator, public PIpcChannelListener
+class BrowserPage : public QGraphicsView, public QBsClient, public WebOSWebPageCreator, public WebOSWebPageNavigator
 {
 Q_OBJECT
 public:
@@ -77,9 +79,9 @@ public:
     static void setInspectorPort(int port) { inspectorPort = port > 0 ? port : 0; }
 
 #ifdef USE_LUNA_SERVICE
-    BrowserPage(BrowserServer* server, YapProxy* proxy, LSHandle* lsHandle);
+    BrowserPage(BrowserServer* server, YapProxy* proxy, LSHandle* lsHandle, QWebOSIpcClient *ipcClient);
 #else
-    BrowserPage(BrowserServer* server, YapProxy* proxy);
+    BrowserPage(BrowserServer* server, YapProxy* proxy, QWebOSIpcClient *ipcClient);
 #endif //USE_LUNA_SERVICE
 
     ~BrowserPage();
@@ -317,9 +319,7 @@ public:
     virtual void setCanBlitOnScroll(bool val);
     virtual void didLayout();
 
-    virtual void onMessageReceived(const PIpcMessage& msg);
-    virtual void onDisconnected();
-    inline int routingId() { return m_offscreen0->key(); } // FIXME: Is this right?
+    PIpcChannel* channel() const; // Required by IPC_MESSAGE_FORWARD
 
 public Q_SLOTS:
     void doContentsSizeChanged(const QSize&);
@@ -343,6 +343,7 @@ private:
     BrowserServer*        m_server;
     YapProxy*             m_proxy;
     char*                 m_identifier;
+    QWebOSIpcClient       *m_ipcClient;
 
 
     GSource*              m_paintTimer;

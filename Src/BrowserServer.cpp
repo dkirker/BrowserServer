@@ -30,6 +30,8 @@ LICENSE@@@ */
 #include <pbnjson.hpp>
 #include <qpersistentcookiejar.h>
 
+#include "qwebosipcclient.h"
+
 #include "BrowserCommon.h"
 #include "BrowserPage.h"
 #include "BrowserPageManager.h"
@@ -104,6 +106,7 @@ BrowserServer* BrowserServer::instance()
 BrowserServer::BrowserServer()
     : BrowserServerBase("browser")
     , m_pageCount(0)
+    , m_ipcClient(0)
     , m_networkAccessManager(0)
     , m_cookieJar(0)
 #ifdef USE_LUNA_SERVICE
@@ -138,6 +141,8 @@ BrowserServer::BrowserServer()
         diskCache->setMaximumCacheSize(StringToBytes(settings.value("CacheMaxSize").toString()));
         m_networkAccessManager->setCache(diskCache);
     }
+    
+    m_ipcClient = new QWebOSIpcClient(mainLoop());
 }
 
 BrowserServer::~BrowserServer()
@@ -297,9 +302,9 @@ BrowserServer::asyncCmdConnect(YapProxy* proxy, int32_t pageWidth, int32_t pageH
     } else {  // making a new BP
 
 #ifdef USE_LUNA_SERVICE
-        pPage = new BrowserPage(this, proxy, m_service);
+        pPage = new BrowserPage(this, proxy, m_service, m_ipcClient);
 #else
-        pPage = new BrowserPage(this, proxy);
+        pPage = new BrowserPage(this, proxy, m_ipcClient);
 #endif //USE_LUNA_SERVICE
 
         if (pPage == NULL) {
